@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday Aomamm 🎂</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --gold: #f0c060; --rose: #f48fa0;
+    --deep: #1a0a14; --blush: #ffd6e0;
+  }
+  html, body { width: 100%; height: 100%; background: var(--deep); overflow: hidden; font-family: 'Cormorant Garamond', serif; }
+
+  /* ── Stars ── */
+  #stars { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .star { position: absolute; border-radius: 50%; background: white; animation: twinkle var(--d) ease-in-out infinite alternate; }
+  @keyframes twinkle { from { opacity: var(--lo); transform: scale(1); } to { opacity: var(--hi); transform: scale(1.6); } }
+
+  /* ── Petals ── */
+  .petal { position: fixed; pointer-events: none; animation: petalDrift linear infinite; opacity: 0.35; z-index: 1; }
+  @keyframes petalDrift {
+    0%   { transform: translateY(-5vh) rotate(0deg) translateX(0); opacity: 0; }
+    10%  { opacity: 0.35; } 90% { opacity: 0.35; }
+    100% { transform: translateY(110vh) rotate(360deg) translateX(40px); opacity: 0; }
+  }
+
+  /* ── Music Player ── */
+  #music-player {
+    position: fixed; bottom: 1.4rem; right: 1.4rem; z-index: 200;
+    display: flex; align-items: center; gap: 0.7rem;
+    background: rgba(26,10,20,0.85); border: 1px solid rgba(240,192,96,0.25);
+    border-radius: 40px; padding: 0.5rem 1rem 0.5rem 0.6rem;
+    backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  #music-toggle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--rose));
+    border: none; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s; flex-shrink: 0;
+  }
+  #music-toggle:hover { transform: scale(1.1); box-shadow: 0 0 14px rgba(240,192,96,0.4); }
+  .music-info { display: flex; flex-direction: column; gap: 2px; }
+  .music-title { font-size: 0.75rem; color: var(--gold); letter-spacing: 0.08em; white-space: nowrap; }
+  .music-bars { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+  .music-bars span { width: 3px; background: var(--rose); border-radius: 2px; animation: bar var(--bd) ease-in-out infinite alternate; transform-origin: bottom; }
+  .music-bars span:nth-child(1){--bd:0.5s} .music-bars span:nth-child(2){--bd:0.7s}
+  .music-bars span:nth-child(3){--bd:0.4s} .music-bars span:nth-child(4){--bd:0.6s}
+  @keyframes bar { from { height: 3px; } to { height: 12px; } }
+  .music-bars.paused span { animation-play-state: paused; height: 4px; }
+
+  /* ── Screen 1: Particles ── */
+  #screen1 { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 10; transition: opacity 1.2s ease, transform 1.2s ease; }
+  #screen1.hide { opacity: 0; pointer-events: none; transform: scale(1.06); }
+  #canvas { position: relative; z-index: 2; display: block; }
+  .subtitle { position: relative; z-index: 2; font-style: italic; font-weight: 300; color: var(--blush); font-size: clamp(0.9rem,2vw,1.2rem); letter-spacing: 0.25em; margin-top: 1.2rem; opacity: 0; animation: fadeUp 1s ease 5.5s forwards; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .continue-hint { position: relative; z-index: 2; margin-top: 3rem; opacity: 0; animation: fadeUp 1s ease 6.5s forwards; }
+  .continue-btn { background: transparent; border: 1px solid rgba(240,192,96,0.5); color: var(--gold); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; letter-spacing: 0.2em; padding: 0.7rem 2.2rem; cursor: pointer; border-radius: 40px; transition: background 0.3s, box-shadow 0.3s; }
+  .continue-btn:hover { background: rgba(240,192,96,0.12); box-shadow: 0 0 22px rgba(240,192,96,0.25); }
+
+  /* ── Screen 2: Message + Photos ── */
+  #screen2 {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9; opacity: 0; pointer-events: none;
+    transition: opacity 1.4s ease;
+    overflow-y: auto;
+    padding: 2rem 1rem;
+  }
+  #screen2.show { opacity: 1; pointer-events: all; }
+
+  .screen2-inner {
+    width: 100%; max-width: 640px;
+    margin: auto;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2.4rem;
+    padding: 1rem 0 3rem;
+  }
+
+  /* Message Card */
+  .card {
+    position: relative; width: 100%;
+    border: 1px solid rgba(240,192,96,0.2); border-radius: 24px;
+    padding: clamp(2rem,6vw,3.5rem) clamp(1.5rem,5vw,3rem);
+    background: linear-gradient(135deg, rgba(30,10,22,0.92), rgba(50,20,35,0.88));
+    box-shadow: 0 0 60px rgba(240,192,96,0.08);
+    text-align: center; backdrop-filter: blur(8px); overflow: hidden;
+  }
+  .card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(240,192,96,0.06) 0%, transparent 70%); pointer-events: none; }
+  .card-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .card-title { font-family: 'Playfair Display', serif; font-style: italic; color: var(--gold); font-size: clamp(1.5rem,5vw,2.2rem); margin-bottom: 1.4rem; line-height: 1.2; }
+  .card-body { font-weight: 300; font-size: clamp(1rem,2.5vw,1.15rem); line-height: 1.9; color: rgba(255,230,220,0.88); letter-spacing: 0.03em; margin-bottom: 2rem; }
+  .card-body em { color: var(--rose); font-style: italic; }
+  .confetti-btn { background: linear-gradient(135deg, #f0c060, #f48fa0); border: none; color: var(--deep); font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; letter-spacing: 0.12em; padding: 0.9rem 2.4rem; border-radius: 40px; cursor: pointer; transition: transform 0.2s, box-shadow 0.3s; box-shadow: 0 4px 20px rgba(240,192,96,0.3); }
+  .confetti-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 30px rgba(240,192,96,0.45); }
+
+  /* Photos Section */
+  .photos-section { width: 100%; }
+  .photos-label {
+    font-family: 'Playfair Display', serif; font-style: italic;
+    color: var(--gold); font-size: clamp(1.1rem,3vw,1.5rem);
+    text-align: center; margin-bottom: 1.2rem; letter-spacing: 0.08em;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .photo-item {
+    position: relative;
+    border-radius: 16px; overflow: hidden;
+    aspect-ratio: 3/4;
+    border: 1px solid rgba(240,192,96,0.18);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(18px) scale(0.95);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+  .photo-item.visible {
+    opacity: 1; transform: translateY(0) scale(1);
+    animation: photoIn 0.7s ease forwards;
+  }
+  .photo-item:nth-child(1) { animation-delay: 0.1s; }
+  .photo-item:nth-child(2) { animation-delay: 0.25s; }
+  .photo-item:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes photoIn { from { opacity: 0; transform: translateY(18px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
+  .photo-item:hover img { transform: scale(1.07); }
+
+  /* Shimmer overlay on hover */
+  .photo-item::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(240,192,96,0.08), transparent 60%);
+    opacity: 0; transition: opacity 0.3s;
+    border-radius: 16px;
+  }
+  .photo-item:hover::after { opacity: 1; }
+
+  /* Gold frame glow on hover */
+  .photo-item:hover { box-shadow: 0 8px 32px rgba(240,192,96,0.22), 0 0 0 1.5px rgba(240,192,96,0.35); }
+
+  /* ── Lightbox ── */
+  #lightbox { position: fixed; inset: 0; z-index: 300; background: rgba(8,2,6,0.95); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.35s; padding: 1.5rem; }
+  #lightbox.show { opacity: 1; pointer-events: all; }
+  #lb-img { max-width: 88vw; max-height: 86vh; border-radius: 18px; box-shadow: 0 0 70px rgba(240,192,96,0.18); object-fit: contain; transition: opacity 0.2s; }
+  .lb-close { position: fixed; top: 1.2rem; right: 1.4rem; background: rgba(30,10,22,0.8); border: 1px solid rgba(240,192,96,0.3); color: var(--gold); font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); transition: background 0.2s; }
+  .lb-close:hover { background: rgba(240,192,96,0.15); }
+  .lb-nav { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(30,10,22,0.75); border: 1px solid rgba(240,192,96,0.25); color: var(--gold); font-size: 1.5rem; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); transition: background 0.2s; }
+  .lb-nav:hover { background: rgba(240,192,96,0.12); }
+  #lb-prev { left: 1rem; } #lb-next { right: 1rem; }
+  .lb-counter { position: fixed; bottom: 1.4rem; left: 50%; transform: translateX(-50%); font-style: italic; color: rgba(240,192,96,0.6); font-size: 0.85rem; letter-spacing: 0.15em; }
+
+  /* ── Confetti ── */
+  .confetti-piece { position: fixed; top: -10px; pointer-events: none; z-index: 100; border-radius: 2px; animation: confettiFall linear forwards; }
+  @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 90%{opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<!-- MP3 -->
+<audio id="bg-music" loop>
+  <source src="Happy_Birthday__Piano_Version_.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Music Player -->
+<div id="music-player">
+  <button id="music-toggle" onclick="toggleMusic()">▶</button>
+  <div class="music-info">
+    <span class="music-title">🎵 Happy Birthday</span>
+    <div class="music-bars paused" id="music-bars">
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 1: Particle Assembly -->
+<div id="screen1">
+  <canvas id="canvas"></canvas>
+  <p class="subtitle">a little something just for you ✦</p>
+  <div class="continue-hint">
+    <button class="continue-btn" onclick="revealScreen2()">Open your gift →</button>
+  </div>
+</div>
+
+<!-- Screen 2: Message + Photos -->
+<div id="screen2">
+  <div class="screen2-inner">
+
+    <!-- Message Card -->
+    <div class="card">
+      <span class="card-icon">🎂</span>
+      <h1 class="card-title">Happy Birthday,<br>Aomamm</h1>
+      <p class="card-body">
+        Have <em>lots</em> of happiness.<br>
+        May this year be one where you grow<br>
+        with <em>happiness</em> and <em>quality</em> in your life.
+      </p>
+      <button class="confetti-btn" onclick="launchConfetti()">🎉 Celebrate!</button>
+    </div>
+
+    <!-- Photos -->
+    <div class="photos-section">
+      <p class="photos-label">Our Memories ✦</p>
+      <div class="photo-grid" id="photo-grid">
+        <div class="photo-item" onclick="openLightbox(0)">
+          <img src="photo1.jpg" alt="Memory 1">
+        </div>
+        <div class="photo-item" onclick="openLightbox(1)">
+          <img src="photo2.jpg" alt="Memory 2">
+        </div>
+        <div class="photo-item" onclick="openLightbox(2)">
+          <img src="photo3.jpg" alt="Memory 3">
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" onclick="closeLightboxOverlay(event)">
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav" id="lb-prev" onclick="lbNav(-1)">‹</button>
+  <img id="lb-img" src="" alt="Memory">
+  <button class="lb-nav" id="lb-next" onclick="lbNav(1)">›</button>
+  <span class="lb-counter" id="lb-counter"></span>
+</div>
+
+<script>
+// ── Stars ──────────────────────────────────────────────
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 160; i++) {
+  const s = document.createElement('div'); s.className = 'star';
+  const sz = Math.random() * 2.2 + 0.4;
+  Object.assign(s.style, {
+    width: sz+'px', height: sz+'px',
+    left: Math.random()*100+'%', top: Math.random()*100+'%',
+    '--lo': (Math.random()*0.3+0.05).toFixed(2),
+    '--hi': (Math.random()*0.5+0.4).toFixed(2),
+    '--d':  (Math.random()*4+2).toFixed(1)+'s',
+    animationDelay: (Math.random()*4)+'s'
+  });
+  starsEl.appendChild(s);
+}
+
+// ── Petals ─────────────────────────────────────────────
+['🌸','✿','❀','🌺','✦','·'].forEach(e => {
+  for (let j = 0; j < 3; j++) {
+    const p = document.createElement('div'); p.className = 'petal'; p.textContent = e;
+    Object.assign(p.style, {
+      left: Math.random()*100+'%',
+      animationDuration: (Math.random()*14+10)+'s',
+      animationDelay: (Math.random()*15)+'s',
+      fontSize: (Math.random()*0.8+0.6)+'rem'
+    });
+    document.body.appendChild(p);
+  }
+});
+
+// ── Music ──────────────────────────────────────────────
+const audio = document.getElementById('bg-music');
+let musicPlaying = false;
+
+function toggleMusic() {
+  if (musicPlaying) {
+    audio.pause(); musicPlaying = false;
+    document.getElementById('music-toggle').textContent = '▶';
+    document.getElementById('music-bars').classList.add('paused');
+  } else {
+    audio.play().catch(() => {});
+    musicPlaying = true;
+    document.getElementById('music-toggle').textContent = '⏸';
+    document.getElementById('music-bars').classList.remove('paused');
+  }
+}
+
+// ── Particle Canvas ────────────────────────────────────
+const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+const LINE1 = 'Happy Birthday', LINE2 = 'Aomamm';
+const COLORS = ['#f0c060','#f48fa0','#ffd6e0','#fff5cc','#f8b4c0'];
+let W, H, particles = [], assembled = false;
+
+function resize() {
+  const scale = window.devicePixelRatio || 1;
+  const maxW = Math.min(window.innerWidth * .95, 820);
+  const f1 = Math.min(maxW / 10, 72), f2 = Math.min(maxW / 5.5, 112);
+  W = Math.round(maxW); H = Math.round(f1 * 1.4 + f2 * 1.4 + 36);
+  canvas.width = W * scale; canvas.height = H * scale;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.scale(scale, scale);
+  buildParticles(f1, f2);
+}
+
+function sampleText(text, fontSize, yOffset) {
+  const off = document.createElement('canvas');
+  off.width = W * 2; off.height = H * 2;
+  const oc = off.getContext('2d');
+  oc.font = `700 ${fontSize * 2}px 'Playfair Display',serif`;
+  oc.fillStyle = '#fff'; oc.textAlign = 'center'; oc.textBaseline = 'middle';
+  oc.fillText(text, W, yOffset * 2);
+  const data = oc.getImageData(0, 0, W * 2, H * 2).data, pts = [];
+  for (let y = 0; y < H * 2; y += 5)
+    for (let x = 0; x < W * 2; x += 5)
+      if (data[(y * W * 2 + x) * 4 + 3] > 128) pts.push({ tx: x / 2, ty: y / 2 });
+  return pts;
+}
+
+function buildParticles(f1, f2) {
+  particles = [];
+  const y1 = f1 * .9, y2 = f1 * 1.6 + f2 * .65;
+  [...sampleText(LINE1, f1, y1), ...sampleText(LINE2, f2, y2)].forEach(({ tx, ty }) => {
+    const angle = Math.random() * Math.PI * 2, dist = Math.random() * Math.max(W, H) * .9 + 80;
+    particles.push({
+      x: tx + Math.cos(angle) * dist, y: ty + Math.sin(angle) * dist,
+      tx, ty, vx: 0, vy: 0,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      size: Math.random() * 1.6 + .6, delay: Math.random() * 3200
+    });
+  });
+}
+
+let startTime = null;
+function animate(ts) {
+  if (!startTime) startTime = ts;
+  const elapsed = ts - startTime; ctx.clearRect(0, 0, W, H);
+  let done = 0;
+  particles.forEach(p => {
+    const t = Math.max(0, elapsed - p.delay), progress = Math.min(1, t / 2800);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    p.x += (p.tx - p.x) * ease * .045 + p.vx * .2;
+    p.y += (p.ty - p.y) * ease * .045 + p.vy * .2;
+    p.vx *= .88; p.vy *= .88;
+    ctx.globalAlpha = Math.min(1, progress * 3); ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    if (Math.abs(p.x - p.tx) < .5 && Math.abs(p.y - p.ty) < .5) done++;
+  });
+  ctx.globalAlpha = 1;
+  done < particles.length * .98 ? requestAnimationFrame(animate) : (assembled = true, drawFinalText());
+}
+
+function drawFinalText() {
+  ctx.clearRect(0, 0, W, H);
+  const f1 = W / 10, f2 = W / 5.5, y1 = f1 * .9, y2 = f1 * 1.6 + f2 * .65;
+  ctx.shadowColor = '#f0c060'; ctx.shadowBlur = 22;
+  ctx.font = `700 ${f1}px 'Playfair Display',serif`;
+  ctx.fillStyle = '#f0c060'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(LINE1, W / 2, y1);
+  ctx.font = `italic 700 ${f2}px 'Playfair Display',serif`;
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, '#f0c060'); grad.addColorStop(.5, '#f8c8d4'); grad.addColorStop(1, '#f48fa0');
+  ctx.fillStyle = grad; ctx.fillText(LINE2, W / 2, y2); ctx.shadowBlur = 0;
+}
+
+resize();
+window.addEventListener('resize', () => { resize(); if (assembled) drawFinalText(); });
+requestAnimationFrame(animate);
+
+// ── Screen Transition ──────────────────────────────────
+function revealScreen2() {
+  document.getElementById('screen1').classList.add('hide');
+  setTimeout(() => {
+    document.getElementById('screen2').classList.add('show');
+    // Animate photos in with stagger
+    setTimeout(() => {
+      document.querySelectorAll('.photo-item').forEach((el, i) => {
+        setTimeout(() => el.classList.add('visible'), i * 160);
+      });
+    }, 600);
+  }, 700);
+}
+
+// ── Confetti ───────────────────────────────────────────
+function launchConfetti() {
+  const cols = ['#f0c060','#f48fa0','#ffd6e0','#a8e0ff','#b0f0b8','#fff','#ffb3c6'];
+  for (let i = 0; i < 140; i++) {
+    const el = document.createElement('div'); el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = cols[Math.floor(Math.random() * cols.length)];
+    el.style.width  = (Math.random() * 8 + 4) + 'px';
+    el.style.height = (Math.random() * 8 + 4) + 'px';
+    el.style.borderRadius = Math.random() > .5 ? '50%' : '2px';
+    const dur = (Math.random() * 2 + 2).toFixed(2) + 's';
+    el.style.animationDuration = dur;
+    el.style.animationDelay = (Math.random() * .8).toFixed(2) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), parseFloat(dur) * 1000 + 900);
+  }
+}
+
+// ── Lightbox ───────────────────────────────────────────
+const PHOTOS = ['photo1.jpg', 'photo2.jpg', 'photo3.jpg'];
+let lbIndex = 0;
+
+function openLightbox(idx) {
+  lbIndex = idx;
+  const img = document.getElementById('lb-img');
+  img.src = PHOTOS[lbIndex];
+  document.getElementById('lb-counter').textContent = (lbIndex + 1) + ' / ' + PHOTOS.length;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('show'); }
+function closeLightboxOverlay(e) { if (e.target === document.getElementById('lightbox')) closeLightbox(); }
+function lbNav(dir) {
+  lbIndex = (lbIndex + dir + PHOTOS.length) % PHOTOS.length;
+  const img = document.getElementById('lb-img');
+  img.style.opacity = '0';
+  setTimeout(() => {
+    img.src = PHOTOS[lbIndex];
+    img.style.opacity = '1';
+    document.getElementById('lb-counter').textContent = (lbIndex + 1) + ' / ' + PHOTOS.length;
+  }, 180);
+}
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('show')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') lbNav(-1);
+  if (e.key === 'ArrowRight') lbNav(1);
+});
+</script>
+</body>
+</html>
